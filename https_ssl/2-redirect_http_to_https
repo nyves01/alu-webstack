@@ -1,0 +1,35 @@
+global
+    log /dev/log    local0
+    log /dev/log    local1 notice
+    daemon
+    maxconn 2048
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5000ms
+    timeout client  50000ms
+    timeout server  50000ms
+
+# Frontend for HTTP traffic – redirect everything to HTTPS
+frontend http_front
+    bind *:80
+    # Redirect root domain to HTTPS www
+    acl is_root hdr(host) -i sftracker.tech
+    redirect prefix https://www.sftracker.tech code 301 if is_root
+    # Redirect all other HTTP traffic to HTTPS
+    redirect scheme https code 301 if !{ ssl_fc }
+
+# HTTPS frontend (still needed to actually serve traffic)
+frontend https_front
+    bind *:443 ssl crt /etc/ssl/www.sftracker.tech.pem
+    mode http
+    default_backend http_back
+
+# Backend serving actual web servers
+backend http_back
+    balance roundrobin
+    server web-01 44.203.97.109:80 check
+    server web-02 35.171.8.246:80 check

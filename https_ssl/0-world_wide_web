@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Script that displays subdomain DNS information
+
+# Function that does the actual DNS lookup
+check_subdomain() {
+    local domain=$1
+    local subdomain=$2
+
+    # dig queries DNS, awk extracts record type and destination
+    result=$(dig "$subdomain.$domain" | grep -A1 'ANSWER SECTION:' | tail -1)
+    record_type=$(echo "$result" | awk '{print $4}')
+    destination=$(echo "$result" | awk '{print $5}')
+
+    echo "The subdomain $subdomain is a $record_type record and points to $destination"
+}
+
+domain=$1
+subdomain=$2
+
+# If only domain is given, check all 4 default subdomains in order
+if [ -z "$subdomain" ]; then
+    check_subdomain "$domain" "www"
+    check_subdomain "$domain" "lb-01"
+    check_subdomain "$domain" "web-01"
+    check_subdomain "$domain" "web-02"
+else
+    # If subdomain is also given, check only that one
+    check_subdomain "$domain" "$subdomain"
+fi
