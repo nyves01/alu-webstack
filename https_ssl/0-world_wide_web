@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Displays subdomain DNS information
 
+# Install dig if not available
+if ! command -v dig &> /dev/null; then
+    apt-get update -y
+    apt-get install -y dnsutils 2>/dev/null || apt-get install -y bind9-dnsutils
+fi
+
 get_subdomain_info() {
     local domain=$1
     local subdomain=$2
